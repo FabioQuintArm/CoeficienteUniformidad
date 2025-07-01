@@ -12,14 +12,16 @@ st.subheader("Sistema de riego por goteo")
 
 st.markdown("Introduce los caudales recogidos (en ml) por cada gotero. Se analizarán 20 goteros.")
 
-# Entradas: 20 goteros
+# Entrada organizada por filas (tabulador en orden)
 caudales = []
-cols = st.columns(4)
-for i in range(20):
-    col = cols[i % 4]
-    with col:
-        val = st.number_input(f"Gotero {i+1}", min_value=0.0, step=0.1, key=f"g{i+1}")
-        caudales.append(val)
+contador = 0
+for fila in range(5):  # 5 filas de 4 columnas
+    cols = st.columns(4)
+    for col in cols:
+        with col:
+            val = st.number_input(f"Gotero {contador + 1}", min_value=0.0, step=0.1, key=f"g{contador + 1}")
+            caudales.append(val)
+            contador += 1
 
 # Botón para calcular CU
 if st.button("Calcular CU"):
@@ -102,4 +104,5 @@ if "resultado" in st.session_state:
     if st.checkbox("📄 Mostrar tabla de datos"):
         df = pd.DataFrame(r['caudales'], columns=["Caudal (ml)"])
         st.dataframe(df)
+
 
