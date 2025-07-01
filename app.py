@@ -1,4 +1,4 @@
-import streamlit as st
+import import streamlit as st
 import numpy as np
 import pandas as pd
 from io import BytesIO
@@ -12,6 +12,7 @@ st.subheader("Sistema de riego por goteo")
 
 st.markdown("Introduce los caudales recogidos (en ml) por cada gotero. Se analizarán 20 goteros.")
 
+# Entradas: 20 goteros
 caudales = []
 cols = st.columns(4)
 for i in range(20):
@@ -20,6 +21,7 @@ for i in range(20):
         val = st.number_input(f"Gotero {i+1}", min_value=0.0, step=0.1, key=f"g{i+1}")
         caudales.append(val)
 
+# Botón para calcular CU
 if st.button("Calcular CU"):
     caudales_ordenados = sorted(caudales)
     n = len(caudales_ordenados)
@@ -28,9 +30,7 @@ if st.button("Calcular CU"):
     media_cuartil_bajo = np.mean(caudales_ordenados[:n_cuartil])
     CU = 100 * (media_cuartil_bajo / media_total)
 
-    st.subheader("🔍 Resultado del cálculo")
-    st.metric("Coeficiente de Uniformidad (CU)", f"{CU:.2f} %")
-
+    # Interpretación
     if CU > 90:
         interpretacion = "Uniformidad excelente"
     elif CU > 85:
@@ -42,10 +42,25 @@ if st.button("Calcular CU"):
     else:
         interpretacion = "Uniformidad muy deficiente"
 
-    st.write(f"**Interpretación técnica:** {interpretacion}")
-    st.write(f"**Nº de goteros analizados:** {n}")
-    st.write(f"**Media total:** {media_total:.2f} ml")
-    st.write(f"**Media del 25% más bajo:** {media_cuartil_bajo:.2f} ml")
+    # Guardar en session_state
+    st.session_state.resultado = {
+        "cu": CU,
+        "media_total": media_total,
+        "media_cuartil_bajo": media_cuartil_bajo,
+        "interpretacion": interpretacion,
+        "caudales": caudales
+    }
+
+# Mostrar resultados si existen
+if "resultado" in st.session_state:
+    r = st.session_state.resultado
+
+    st.subheader("🔍 Resultado del cálculo")
+    st.metric("Coeficiente de Uniformidad (CU)", f"{r['cu']:.2f} %")
+    st.write(f"**Interpretación técnica:** {r['interpretacion']}")
+    st.write(f"**Nº de goteros analizados:** {len(r['caudales'])}")
+    st.write(f"**Media total:** {r['media_total']:.2f} ml")
+    st.write(f"**Media del 25% más bajo:** {r['media_cuartil_bajo']:.2f} ml")
 
     def generar_pdf():
         buffer = BytesIO()
@@ -55,16 +70,16 @@ if st.button("Calcular CU"):
 
         textobject.textLine("Informe de Cálculo del Coeficiente de Uniformidad (CU)")
         textobject.textLine("")
-        textobject.textLine(f"Número de goteros analizados: {n}")
-        textobject.textLine(f"Media total: {media_total:.2f} ml")
-        textobject.textLine(f"Media del 25% más bajo: {media_cuartil_bajo:.2f} ml")
-        textobject.textLine(f"CU (Coeficiente de Uniformidad): {CU:.2f} %")
-        textobject.textLine(f"Interpretación: {interpretacion}")
+        textobject.textLine(f"Número de goteros analizados: {len(r['caudales'])}")
+        textobject.textLine(f"Media total: {r['media_total']:.2f} ml")
+        textobject.textLine(f"Media del 25% más bajo: {r['media_cuartil_bajo']:.2f} ml")
+        textobject.textLine(f"CU (Coeficiente de Uniformidad): {r['cu']:.2f} %")
+        textobject.textLine(f"Interpretación: {r['interpretacion']}")
         textobject.textLine("")
         textobject.textLine("Caudales analizados (ml):")
 
-        for i in range(0, len(caudales), 5):
-            bloque = ", ".join(f"{v:.1f}" for v in caudales[i:i+5])
+        for i in range(0, len(r['caudales']), 5):
+            bloque = ", ".join(f"{v:.1f}" for v in r['caudales'][i:i+5])
             textobject.textLine(bloque)
 
         c.drawText(textobject)
@@ -82,8 +97,9 @@ if st.button("Calcular CU"):
     )
 
     if st.checkbox("📊 Mostrar gráfico de caudales"):
-        st.bar_chart(pd.Series(caudales, name="Caudal (ml)"))
+        st.bar_chart(pd.Series(r['caudales'], name="Caudal (ml)"))
 
     if st.checkbox("📄 Mostrar tabla de datos"):
-        df = pd.DataFrame(caudales, columns=["Caudal (ml)"])
+        df = pd.DataFrame(r['caudales'], columns=["Caudal (ml)"])
         st.dataframe(df)
+
