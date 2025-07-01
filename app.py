@@ -13,17 +13,14 @@ st.subheader("Sistema de riego por goteo")
 st.markdown("Introduce los caudales recogidos (en ml) por cada gotero. Se analizarán 20 goteros.")
 
 caudales = []
+cols = st.columns(4)
+for i in range(20):
+    col = cols[i % 4]
+    with col:
+        val = st.number_input(f"Gotero {i+1}", min_value=0.0, step=0.1, key=f"g{i+1}")
+        caudales.append(val)
 
-with st.form("form_caudales"):
-    cols = st.columns(4)
-    for i in range(20):
-        col = cols[i % 4]
-        with col:
-            val = st.number_input(f"Gotero {i+1}", min_value=0.0, step=0.1, key=f"g{i+1}")
-            caudales.append(val)
-    submitted = st.form_submit_button("Calcular CU")
-
-if submitted:
+if st.button("Calcular CU"):
     caudales_ordenados = sorted(caudales)
     n = len(caudales_ordenados)
     media_total = np.mean(caudales_ordenados)
@@ -90,6 +87,3 @@ if submitted:
     if st.checkbox("📄 Mostrar tabla de datos"):
         df = pd.DataFrame(caudales, columns=["Caudal (ml)"])
         st.dataframe(df)
-else:
-    st.info("Rellena todos los campos y pulsa 'Calcular CU'.")
-
